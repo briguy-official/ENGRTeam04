@@ -67,7 +67,7 @@ We will be deciding in meetings on the structure we want to use for folders.
 If you are adding code for a bonus, add it in the folder for that set of bonus
 activities (i.e. C4, etc). 
 
-```
+
 
 #### 6. Submitting Your Code
 
