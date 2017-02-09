@@ -1,1 +1,1 @@
-This is a repository for the C4 activities
+This is a repository for the C4 activities.
