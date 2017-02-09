@@ -6,7 +6,7 @@ at Purdue University, Spring 2017.
 Brian Acosta,
 Jory Lyons,
 Cade Rhodine,
-Noah Stover,
+Noah Stover
 
 # How to use
 If you are not on Team 04, please do not submit any pull requests.
