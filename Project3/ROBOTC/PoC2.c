@@ -48,8 +48,8 @@ void beepThrice() {
 void dispenseBin() {
 	wait1Msec(10);
 
-	nMotorEncoderTarget[motorA] = 720;
-	motor[motorA] = 10;
+	nMotorEncoderTarget[motorA] = 120;
+	motor[motorA] = 5;
 
 	while ((nMotorRunState[motorA] != runStateIdle)) //while the encoder wheel turns one revolution
 	{
@@ -58,65 +58,15 @@ void dispenseBin() {
 	motor[motorA] = 0;
 
 	wait1Msec(100);
-	forward(1); // move forward one second to move out of way
+	forward(360, degrees, 10); // move forward one second to move out of way
 	wait1Msec(1000);
-
-	nMotorEncoderTarget[motorA] = -720;
-	motor[motorA] = -10;
-
-	while ((nMotorRunState[motorA] != runStateIdle)) //while the encoder wheel turns one revolution
-	{
-		beepThrice();
-	}
-	motor[motorA] = 0;
-}
-
-void turn30CCW() //counter-clockwise
-{
-	wait1Msec(10);
-
-	nMotorEncoderTarget[motorB] = 180; //set the target stoping position
-	nMotorEncoderTarget[motorC] = -180;
-
-	motor[motorB] = 35;
-	motor[motorC] = -35; //turn both motors on at 100 percent power
-
-	while ((nMotorRunState[motorB] != runStateIdle) && (nMotorRunState[motorB] != runStateIdle)) //while the encoder wheel turns one revolution
-	{
-		// This condition waits for motors B + C to come to an idle position. Both motors stop
-		// and then jumps out of the loop
-	}
-
-	motor[motorC] = 0; //turn both motors off
-	motor[motorB] = 0;
-	motor[motorA] = 0;
-}
-
-void turn30CW() //clockwise
-{
-	wait1Msec(10);
-
-	nMotorEncoderTarget[motorB] = -180; //set the target stoping position
-	nMotorEncoderTarget[motorC] = 180;
-
-	motor[motorB] = -35;
-	motor[motorC] = 35; //turn both motors on at 100 percent power
-
-	while ((nMotorRunState[motorB] != runStateIdle) && (nMotorRunState[motorB] != runStateIdle)) //while the encoder wheel turns one revolution
-	{
-		// This condition waits for motors B + C to come to an idle position. Both motors stop
-		// and then jumps out of the loop
-	}
-
-	motor[motorC] = 0; //turn both motors off
-	motor[motorB] = 0;
-	motor[motorA] = 0;
 }
 
 void sendMessages() {
 	//while(time1[T1] > 1500) { //15 seconds for final, currently 1
 	sendMessage(150); //height off the ground of the ALV marker in mm
 	wait1Msec(100);
+	//if (time1[T1] < 15000) {}
 	return;
 }
 
@@ -187,6 +137,10 @@ task receiveMessage()
 	}
 }
 
+task moveTo() {
+
+}
+
 
 task main()
 {
@@ -204,10 +158,12 @@ task main()
 
 	startTask (receiveMessage);
 	sendMessages();
-	//turn30CCW(); // TASK 1
+	//turnLeft(180, degrees, 25); //TASK 1
 	//forward(30);
 
 	// forward(30, seconds, 25); // TASK 3
+
+	dispenseBin(); // TASK 5
 
 	// TASK 4
 	int hallVal = SensorValue(hallEffect);
@@ -217,15 +173,10 @@ task main()
 	}
 	stopAllMotors();
 	beepThrice();
-
-	// dispenseBin(); // TASK 5
+	//dispenseBin(); // NOT FOR POC
 
 	/* // TASK 6
 	sendMessages();
-	while(flag == 1) {
-
-	}
-	flag = 0;
 	*/
 
 
