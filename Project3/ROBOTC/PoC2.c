@@ -9,6 +9,7 @@
 
 #define BATTERY_THRESHOLD 1000
 
+const float PI = 3.14159265359;
 int flag = 0;
 
 typedef struct location_struct{
@@ -16,8 +17,7 @@ typedef struct location_struct{
 	float y;
 } location;
 
-void initializeRobot()
-{
+void initializeRobot() {
 	displayCenteredTextLine(6, "Team04");
 	clearTimer(T1);							//clear timer for LSTS
 	nMotorEncoder[motorA] = 0;	//clear motor encoders
@@ -33,8 +33,26 @@ void initializeRobot()
 	return;
 }
 
-//forward(sec); //already defined
-//backward(sec); //already defined
+void sendMessages() {
+	while(time1[T1] > 15000) { //15 seconds for final, currently 1
+		sendMessage(150); //height off the ground of the ALV marker in mm
+		wait1Msec(100);
+		clearTimer(T1);
+	}
+	return;
+}
+
+void initializeDirection() { // used to find direction
+	sendMessages();
+	clearTimer(T1);
+	while(time1[T1] < 15100) {
+		forward(2, rotations, 50);
+		wait1Msec(15100);
+	}
+	sendMessages();
+	clearTimer(T1);
+	//wait1Msec(15100);
+}
 
 void beepThrice() {
 	int i = 0;
@@ -60,18 +78,21 @@ void dispenseBin() {
 	wait1Msec(100);
 	forward(360, degrees, 10); // move forward one second to move out of way
 	wait1Msec(1000);
-}
-
-void sendMessages() {
-	//while(time1[T1] > 1500) { //15 seconds for final, currently 1
-	sendMessage(150); //height off the ground of the ALV marker in mm
-	wait1Msec(100);
-	//if (time1[T1] < 15000) {}
 	return;
 }
 
-task receiveMessage()
-{
+void senseMagnet() {
+	int hallVal = SensorValue(hallEffect);
+
+	while(abs(SensorValue(hallEffect) - hallVal) <= 7) {
+		forward(50, milliseconds, 50);
+	}
+	stopAllMotors();
+	beepThrice();
+	return;
+}
+
+task receiveMessage() {
 	location robot[3];			// past 3 locations
 	int error[3];					// past 3 error messages
 	int i = 0;							// iterated variable
@@ -82,6 +103,12 @@ task receiveMessage()
 			wait1Msec(100);
 			error[i] = messageParm[0];
 			nxtDisplayClearTextLine(1);
+
+			// -1 = deep caverns
+			// 0 = normal
+			// 1 = rough terrain
+			// 2 = large hazards
+			// 40 - special locations
 
 			switch(error[i]) {
 			case 1: //00000001b : //bitwise operators?
@@ -119,13 +146,19 @@ task receiveMessage()
 			robot[i].y = messageParm[2]; //mm
 			nxtDisplayCenteredTextLine(3, "X : %d", robot[i].x);
 			nxtDisplayCenteredTextLine(4, "Y : %d", robot[i].y);
+			nxtDisplayCenteredTextLine(6, "D : %d", robot[2].y);
 			wait1Msec(10); // wait 10 mseconds
-			if(i == 2) {
-				i = 0;
+			if(i != 1) {
+				robot[2].x = robot[0].x - robot[1].x;
+				robot[2].y = robot[0].y - robot[1].y;
+				i = 1;
 			}
 			else {
-				i++;
+				robot[2].x = robot[1].x - robot[0].x;
+				robot[2].y = robot[1].y - robot[0].y;
+				i = 0;
 			}
+
 			flag = 1;
 			ClearMessage();
 			clearTimer(T1);
@@ -137,58 +170,54 @@ task receiveMessage()
 	}
 }
 
+/*
 task moveTo() {
+robot[2].x;
+robot[2].y;
+} */
 
-}
 
-
-task main()
-{
-	initializeRobot();
+task main() {
 	int speed = 0;          // Will hold the speed of the motors.
 	int sonarValue = 0;     // Will hold the values read in by the Sonar Sensor.
 	int distance = 35;      // Specified distance to be at 35 centimeters.
 	//int map[275][365]; //cm NO MEMORY
-	// -1 = deep caverns
-	// 0 = normal
-	// 1 = rough terrain
-	// 2 = large hazards
-	// 40 - special locations
-	clearTimer(T1);
 
+	sonarValue = SensorValue(sonar);
+
+	clearTimer(T1);
+	initializeRobot();
+
+	//LSTS Code
 	startTask (receiveMessage);
+	initializeDirection();
+	//MOVE SOMEWHERE FIRST
 	sendMessages();
+
+
 	//turnLeft(180, degrees, 25); //TASK 1
 	//forward(30);
 
 	// forward(30, seconds, 25); // TASK 3
 
-	dispenseBin(); // TASK 5
+	//NEED ACCURATE MEASUREMENTS
+	/* TASK 5
+	forward(3.0, rotations, 75); //straight .45 m
+	turnRight(540, degrees, 25); //turn right 90
+	forward(2.0, rotations, 75); //straight .2 m
+	motor[motorB] = 30;
+	motor[motorC] = 70; //turn left 0.15m
+	forward(2.5, rotations, 75); //straight .3 m
+	dispenseBin();
+	*/
 
 	// TASK 4
-	int hallVal = SensorValue(hallEffect);
-
-	while(abs(SensorValue(hallEffect) - hallVal) <= 20) {
-		forward(50, milliseconds, 50);
-	}
-	stopAllMotors();
+	senseMagnet();
 	beepThrice();
 	//dispenseBin(); // NOT FOR POC
+
 
 	/* // TASK 6
 	sendMessages();
 	*/
-
-
-	/* //SONAR *********
-	sonarValue = SensorValue(sonar);
-
-	speed = (SensorValue(sonar) - distance);
-	// 'speed' is set to the reading of the Sonar Sensor - some distance in centimeters
-
-	if(speed > 100)
-	{
-	speed = 100;  // Check to see if calculated speed is greater than 100, if so make it 100.
-	}
-	*/ // END OF SONAR *****
 }
