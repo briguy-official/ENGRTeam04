@@ -35,7 +35,7 @@
 #define PI 4.0 * atan(1.0)
 
 int main(void){
-    const int Eout = 120; //MWh  energy out
+    const double Eout = 120 * 3600 * 1e6; //Joules energy out
     const double g = 9.81; //m/s^2  gravity
     const int rho =  1000; //kg/m^3  density of water   
     
@@ -52,11 +52,8 @@ int main(void){
     double K1 = 0.0; //   bend coefficient 1
     double K2 = 0.0; //   bend coefficient 2
     
-    double fPUp = 0.0; //pipe friction up
-    double fPDown = 0.0; //pipe friction down   
-    
     // Outputs
-    double A = 0.0; //m^2   reservoir surface area CONSTANT
+    // double A = 0.0; //m^2   reservoir surface area CONSTANT
     double Ein = 0.0; //MWh input energy
     double etaS = 0.0; //   system efficiency
     double timeIn = 0.0; //   time to fill
@@ -71,14 +68,17 @@ int main(void){
     account for the depth of the reservoir when calculating potential energy
     Mass is at heigh of 0.5 * depth 
     */  
-    
-    double v = 0.0; //m/s   velocity CONSTANT   
+     
     double vUp = 0.0;   
+    double vUpSq = 0.0;
     double vDown = 0.0; 
+    double vDownSq = 0.0;
+    double pipeArea = 0.0;
     double m = 0.0; //kg   mass stored in reservoir
-    double Eloss = 0.0;
+    double effElev = 0.0;
+    // double Eloss = 0.0;
     
-    double cost = 0.0; //dollars
+    // double cost = 0.0; //dollars
     
     printf("Pump Efficiency: ");
     scanf(" %lf", &etaP);
@@ -114,38 +114,71 @@ int main(void){
     scanf(" %lf", &K2);
     
     
-    switch depth { // cost from height of reservoir walls
+    // intermediate calculations
+    pipeArea = PI * D * D / 4.0;
+    vDown = Qturbine / pipeArea;
+    vDownSq = vDown * vDown;
+    vUp = Qpump / pipeArea;
+    vUpSq = vUp * vUp;
+    effElev = H + (depth / 2.0);
+    
+    /* m = (Eout + (Eout * ((1/etaT) - 1))) / (g * effElev - (fPDown
+        * L * vDownSq / (2 * D)) - ((K1 * vDownSq / 2) + (K2 * vDownSq / 2)));
+        //old equation */ 
+    
+    m = (Eout + Eout * ((1.0 / etaT) - 1.0)) / 
+        (g * effElev - (vDownSq / 2.0) * (K1 + K2 + (f * L / D)));
+    
+    Ein = (1.0 / etaP) * m * (g * effElev + (vUpSq / 2.0) * 
+          (K1 + K2 + (f * L / D)));
+        
+    etaS = Eout / Ein;
+    timeIn = (m / rho) / Qpump;
+    timeOut = (m / rho) / Qturbine;
+    
+    // temporary:
+    //A = 1000000;
+    
+/*     switch (depth) { // cost from height of reservoir walls
         case depth >= 20.0:
             cost += ((depth-17.5)*(340-250)*(2.5));
-            //break;
+            // break;
         case depth >= 17.5:
             cost += ((depth-15)*(250-180)*(2.5));
-            //break;
+            // break;
         case depth >= 15.0:
             cost += ((depth-12.5)*(180-135)*(2.5));
-            //break;
+            // break;
         case depth >= 12.5:
             cost += ((depth-10)*(135-95)*(2.5));
-            //break;
+            // break;
         case depth >= 10.0:
             cost += ((depth-7.5)*(95-60)*(2.5));
-            //break;
+            // break;
         case depth >= 7.5:
             cost += ((depth-7.5)*(95-60)*(2.5));
-            //break;
+            // break;
         case depth >= 5.0:
             cost += ((depth-5.0)*(60-30)*(2.5));
             break;
 	}   
-    
+     */
     //on ground (2m) = 500 dollars / meter
     //off ground = onground + 250 * area from ground
-    
-    printf("Reservoir Surface Area: %lf \n");
-    printf("Input Energy: %lf \n");
-    printf("System Efficiency: %lf \n");
-    printf("Time to Fill: %lf \n"); // msut be less than 12 hours
-    printf("Time to Empty: %lf \n");
+    Ein /= 3600.0 * 1000000.0;
+    timeIn /= 3600;
+    timeOut /= 3600;
+
+    //printf("\nReservoir Surface Area: %.4le \n", A);
+    printf("Pipe Area: %.2lf\n", pipeArea);
+    printf("Velocity up: %.2lf\n", vUp);
+    printf("Velocity down: %.2lf\n", vDown);
+    printf("Effective elevation: %.2lf\n", effElev);
+    printf("Mass stored in reservoir: %.2le\n", m);
+    printf("Input Energy: %.2lf \n", Ein);
+    printf("System Efficiency: %.2lf \n", etaS);
+    printf("Time to Fill: %.2lf \n", timeIn); // must be less than 12 hours
+    printf("Time to Empty: %.2lf \n", timeOut);
     
     return 0;
 }
