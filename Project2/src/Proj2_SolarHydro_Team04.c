@@ -14,8 +14,8 @@
 * Team: 4
 *
 * ELECTRONIC SIGNATURE
-* Jory Lyons
 * Brian Acosta
+* Jory Lyons
 * Cade Rhodine
 * Noah Stover
 *
@@ -54,6 +54,9 @@ int main(void){
     double Qturbine = 0.0; //m^3/s   volumetric flow rate of turbine
     double K1 = 0.0; //   bend coefficient 1
     double K2 = 0.0; //   bend coefficient 2
+    double K3 = 0.0; //   bend coefficient 3
+    double K4 = 0.0; //   bend coefficient 4
+    double A = 0; //area of reservoir
     
     // Outputs
     // double A = 0.0; //m^2   reservoir surface area CONSTANT
@@ -71,17 +74,20 @@ int main(void){
     account for the depth of the reservoir when calculating potential energy
     Mass is at heigh of 0.5 * depth 
     */  
-     
+    
     double vUp = 0.0;   
     double vUpSq = 0.0;
     double vDown = 0.0; 
     double vDownSq = 0.0;
     double pipeArea = 0.0;
-    double m = 0.0; //kg   mass stored in reservoir
+    long double m = 0.0; //kg   mass stored in reservoir
     double effElev = 0.0;
+    double width = 0.0; //width of bottom of tank
+    double length = 0.0; //lenght of bottom of tank
+    int property = 0; //number of property (1, 2, 3)
     // double Eloss = 0.0;
     
-    // double cost = 0.0; //dollars
+    double cost = 0.0; //dollars
     
     printf("Pump Efficiency: ");
     scanf(" %lf", &etaP);
@@ -116,6 +122,12 @@ int main(void){
     printf("Bend Coefficient 2: ");
     scanf(" %lf", &K2);
     
+    printf("Bend Coefficient 3: ");
+    scanf(" %lf", &K3);
+    
+    printf("Bend Coefficient 4: ");
+    scanf(" %lf", &K4);
+    
     
     // intermediate calculations
     pipeArea = PI * D * D / 4.0;
@@ -130,7 +142,7 @@ int main(void){
         //old equation */ 
     
     m = (Eout + Eout * ((1.0 / etaT) - 1.0)) / 
-        (g * effElev - (vDownSq / 2.0) * (K1 + K2 + (f * L / D)));
+        (g * effElev - (vDownSq / 2.0) * (K1 + K2 + K3 + K4 + (f * L / D)));
     
     Ein = (1.0 / etaP) * m * (g * effElev + (vUpSq / 2.0) * 
           (K1 + K2 + (f * L / D)));
@@ -138,46 +150,59 @@ int main(void){
     etaS = Eout / Ein;
     timeIn = (m / rho) / Qpump;
     timeOut = (m / rho) / Qturbine;
-    
-    // temporary:
-    //A = 1000000;
-    
-/*     switch (depth) { // cost from height of reservoir walls
-        case depth >= 20.0:
-            cost += ((depth-17.5)*(340-250)*(2.5));
-            // break;
-        case depth >= 17.5:
-            cost += ((depth-15)*(250-180)*(2.5));
-            // break;
-        case depth >= 15.0:
-            cost += ((depth-12.5)*(180-135)*(2.5));
-            // break;
-        case depth >= 12.5:
-            cost += ((depth-10)*(135-95)*(2.5));
-            // break;
-        case depth >= 10.0:
-            cost += ((depth-7.5)*(95-60)*(2.5));
-            // break;
-        case depth >= 7.5:
-            cost += ((depth-7.5)*(95-60)*(2.5));
-            // break;
-        case depth >= 5.0:
-            cost += ((depth-5.0)*(60-30)*(2.5));
-            break;
-	}   
-     */
+       
     //on ground (2m) = 500 dollars / meter
     //off ground = onground + 250 * area from ground
+    A = m / (rho * depth);
+    
+    // BEGINNING OF COST
+    if (depth >= 20.0) {
+        cost += ((depth-17.5)*(340-250)*(2.5));
+    }
+    if (depth >= 17.5) {
+        cost += ((depth-15)*(250-180)*(2.5));
+    }
+    if (depth >= 15.0) {
+        cost += ((depth-12.5)*(180-135)*(2.5));
+    }
+    if (depth >= 12.5) {
+        cost += ((depth-10)*(135-95)*(2.5));
+    }
+    if (depth >= 10.0) {
+        cost += ((depth-7.5)*(95-60)*(2.5));
+    }
+    if (depth >= 7.5) {
+        cost += ((depth-7.5)*(95-60)*(2.5));
+    }
+    if (depth >= 5.0) {
+        cost += ((depth-5.0)*(60-30)*(2.5));
+    }   
+    cost *= length * width; //cost of walls
+    cost += 100000; //+cost of pump house
+    switch (property) {
+        case 1:
+            cost += 40000; //road
+            break;
+        case 2:
+            cost += 100000; //road
+            break;
+        case 3:
+            cost += 150000; //road
+            break;
+    }
+
     Ein /= 3600.0 * 1000000.0;
     timeIn /= 3600;
     timeOut /= 3600;
-
-    //printf("\nReservoir Surface Area: %.4le \n", A);
-    printf("Pipe Area: %.2lf\n", pipeArea);
+    
+    printf("\nPipe Area: %.2lf\n", pipeArea);
     printf("Velocity up: %.2lf\n", vUp);
     printf("Velocity down: %.2lf\n", vDown);
     printf("Effective elevation: %.2lf\n", effElev);
-    printf("Mass stored in reservoir: %.2le\n", m);
+    printf("Energy Out in Joules: %.2le\n\n", ((Ein * etaS) * 3600 * 1e6));
+    
+    printf("Mass stored in reservoir: %.2Le\n", m);
+    printf("Area of Reservoir: %.2le\n", A);
     printf("Input Energy: %.2lf \n", Ein);
     printf("System Efficiency: %.2lf \n", etaS);
     printf("Time to Fill: %.2lf \n", timeIn); // must be less than 12 hours
