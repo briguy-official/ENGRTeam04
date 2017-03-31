@@ -82,12 +82,6 @@ int main(void){
     double pipeArea = 0.0;
     long double m = 0.0; //kg   mass stored in reservoir
     double effElev = 0.0;
-    double width = 0.0; //width of bottom of tank
-    double length = 0.0; //lenght of bottom of tank
-    int property = 0; //number of property (1, 2, 3)
-    // double Eloss = 0.0;
-    
-    double cost = 0.0; //dollars
     
     printf("Pump Efficiency: ");
     scanf(" %lf", &etaP);
@@ -155,58 +149,22 @@ int main(void){
     //off ground = onground + 250 * area from ground
     A = m / (rho * depth);
     
-    // BEGINNING OF COST
-    if (depth >= 20.0) {
-        cost += ((depth-17.5)*(340-250)*(2.5));
-    }
-    if (depth >= 17.5) {
-        cost += ((depth-15)*(250-180)*(2.5));
-    }
-    if (depth >= 15.0) {
-        cost += ((depth-12.5)*(180-135)*(2.5));
-    }
-    if (depth >= 12.5) {
-        cost += ((depth-10)*(135-95)*(2.5));
-    }
-    if (depth >= 10.0) {
-        cost += ((depth-7.5)*(95-60)*(2.5));
-    }
-    if (depth >= 7.5) {
-        cost += ((depth-7.5)*(95-60)*(2.5));
-    }
-    if (depth >= 5.0) {
-        cost += ((depth-5.0)*(60-30)*(2.5));
-    }   
-    cost *= length * width; //cost of walls
-    cost += 100000; //+cost of pump house
-    switch (property) {
-        case 1:
-            cost += 40000; //road
-            break;
-        case 2:
-            cost += 100000; //road
-            break;
-        case 3:
-            cost += 150000; //road
-            break;
-    }
-
     Ein /= 3600.0 * 1000000.0;
     timeIn /= 3600;
     timeOut /= 3600;
     
-    printf("\nPipe Area: %.2lf\n", pipeArea);
-    printf("Velocity up: %.2lf\n", vUp);
-    printf("Velocity down: %.2lf\n", vDown);
-    printf("Effective elevation: %.2lf\n", effElev);
-    printf("Energy Out in Joules: %.2le\n\n", ((Ein * etaS) * 3600 * 1e6));
+    printf("\nPipe Area: %.2lf m^2\n", pipeArea);
+    printf("Velocity up: %.2lf m/s\n", vUp);
+    printf("Velocity down: %.2lf m/s\n", vDown);
+    printf("Effective elevation: %.2lf m\n", effElev);
+    printf("Energy Out in Joules: %.2le J\n\n", ((Ein * etaS) * 3600 * 1e6));
     
-    printf("Mass stored in reservoir: %.2Le\n", m);
-    printf("Area of Reservoir: %.2le\n", A);
-    printf("Input Energy: %.2lf \n", Ein);
+    printf("Mass stored in reservoir: %.2Le kg\n", m);
+    printf("Area of Reservoir: %.2le m^2\n", A);
+    printf("Input Energy: %.2lf MWh\n", Ein);
     printf("System Efficiency: %.2lf \n", etaS);
-    printf("Time to Fill: %.2lf \n", timeIn); // must be less than 12 hours
-    printf("Time to Empty: %.2lf \n", timeOut);
+    printf("Time to Fill: %.2lf hrs\n", timeIn); // must be less than 12 hours
+    printf("Time to Empty: %.2lf hrs\n", timeOut);
     
     return 0;
 }

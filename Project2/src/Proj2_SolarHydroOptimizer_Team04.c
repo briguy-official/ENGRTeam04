@@ -43,6 +43,9 @@ double efficiency(double etaP, double etaT, double D, double L, double f,
                   double K1, double K2, double K3, double MAX_AREA, double* SA);
 int main(void){
     // constants
+    const double Eout = 120 * 3600 * 1e6; //Joules energy out
+    const double g = 9.81; //m/s^2  gravity
+    const int rho =  1000; //kg/m^3  density of water 
     int PUMPING_COSTS[5];
     int TURBINE_COSTS[5];
     double FITTING_COSTS_1[13];
@@ -70,7 +73,7 @@ int main(void){
         {340.0, 408.0, 490.0, 735.0, 919.0, 1101.0} };
         
     const double ETA_P[] = {0.8, 0.83, 0.86, 0.89, 0.92};
-    const double PIPE_FRICTIONS[] = {0.05, 0.03, 0.02, 0.01, 0.0005, 0.002};
+    const double PIPE_FRICTIONS[] = {0.05, 0.03, 0.02, 0.01, 0.005, 0.002};
     const double PIPE_DIAMETERS[] = {0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 
                                     2.0, 2.25, 2.5, 2.75, 3.0};
     const double ETA_T[] = {0.83, 0.86, 0.89, 0.92, 0.94};
@@ -105,6 +108,19 @@ int main(void){
     double costPerEff;
     double SA;
     
+    double pipeArea = 0.0;
+    double vDown = 0.0;
+    double vDownSq = 0.0;
+    double vUp = 0.0;
+    double vUpSq = 0.0;
+    double effElev = 0.0;
+    double m = 0.0;
+    double Ein = 0.0;
+    double timeIn = 0.0;
+    double timeOut = 0.0;
+    double A = 0.0;
+    double perimeter = 0.0;
+    
     // Counters
     int i = 0;
     int j = 0;
@@ -115,7 +131,7 @@ int main(void){
     int c = 0;
     int numCalcs = 0;
     
-    printf("Enter zone: ");
+    printf("Enter Zone (1, 2, 3): ");
     scanf(" %d", &zone);
     
     switch (zone) {
@@ -243,7 +259,7 @@ int main(void){
                 for(l = 0; l < 5; l++){ //counter for etaP
                     for(a = 0; a < 6; a++){ //pipe friction counter
                         for(b = 0; b < 100; b++){ // pump flow rate counter
-                            for(c = 0; c < 100; c++){ //turbine flow rate counter
+                            for(c = 0; c < 100; c++){ //turbine flow rate 
                             numCalcs ++;
                             etaS = 
                                 efficiency(
@@ -269,39 +285,36 @@ int main(void){
                             }
                             
                             // COST ASSUMPTIONS:
-                            // No extenuating circumstances (i.e. moving bodies)
-                            // all reservoirs are circles
-                            cost = b * PUMPING_COSTS[l] + c * TURBINE_COSTS[k] +
+                            // No extenuating circumstances (i.e moving bodies)
+                            // all reservoirs are squares
+                            cost = b * PUMPING_COSTS[l] + c * TURBINE_COSTS[k]+
                                    PIPE_COSTS[i][a] * L + FITTING_COSTS_1[i] +
                                    FITTING_COSTS_2[i] + FITTING_COSTS_3[i] +
                                    ACCESS_COST + PREP_COST * SA + EXTRA_COST;
                             
+                            perimeter = 4 * sqrt(SA);
+                            //perimeter = 2 * PI * sqrt(SA / PI);
+                            
                             if (j >= 20.0) {
-                                cost += ((j-17.5)*(340-250)*(2.5));
+                                cost += perimeter * ((j-17.5)*(340-250)/(2.5));
                             }
                             if (j >= 17.5) {
-                                cost += 2 * PI * sqrt(SA / PI) *
-                                ((j-15)*(250-180)*(2.5));
+                                cost += perimeter * ((j-15)*(250-180)/(2.5));
                             }
                             if (j >= 15.0) {
-                                cost += 2 * PI * sqrt(SA / PI) *
-                                ((j-12.5)*(180-135)*(2.5));
+                                cost += perimeter *((j-12.5)*(180-135)/(2.5));
                             }
                             if (j >= 12.5) {
-                                cost += 2 * PI * sqrt(SA / PI) *
-                                ((j-10)*(135-95)*(2.5));
+                                cost += perimeter * ((j-10)*(135-95)/(2.5));
                             }
                             if (j >= 10.0) {
-                                cost += 2 * PI * sqrt(SA / PI) *
-                                ((j-7.5)*(95-60)*(2.5));
+                                cost += perimeter * ((j-7.5)*(95-60)/(2.5));
                             }
                             if (j >= 7.5) {
-                                cost += 2 * PI * sqrt(SA / PI) *
-                                ((j-7.5)*(95-60)*(2.5));
+                                cost += perimeter * ((j-5.0)*(60-30)/(2.5));
                             }
                             if (j >= 5.0) {
-                                cost += 2 * PI * sqrt(SA / PI) *
-                                ((j-5.0)*(60-30)*(2.5));
+                                cost += perimeter * ((j)*(30));
                             }
                             
                             cost += 100000;
@@ -331,29 +344,64 @@ int main(void){
         }
     }
     
-    printf("Cost: %.2lf\n", optimalCost);
-    printf("Efficiency: %.2lf\n", optimalEtaS);
     printf("Cost to Efficiency ratio: %.2lf\n", minCostPerEff);
     printf("Pump efficiency: %.2lf\n", etaP);
     printf("Turbine efficiency: %.2lf\n", etaT);
-    printf("Pipe diameter: %.2lf\n", D);
+    printf("Pipe diameter: %.2lf m\n", D);
+    printf("Ppe Length: %.2lf m\n", L);
     printf("Pipe friction: %.4lf\n", f);
-    printf("Depth: %.2lf\n", depth);
-    printf("Pump Vol FLow Rate: %.2lf\n", Qpump);
-    printf("Turbine Vol Flow Rate: %.2lf\n", Qturbine);
+    printf("Depth of Reservoir: %.2lf m\n", depth);
+    printf("Pump Vol FLow Rate: %.2lf m^3/s\n", Qpump);
+    printf("Turbine Vol Flow Rate: %.2lf m^3/s\n", Qturbine);
     printf("K1: %.2lf\n", k1);
     printf("K2: %.2lf\n", k2);
     printf("K3: %.2lf\n", k3);
     printf("H: %.2lf\n", H);
-    printf("Combinations checked: %d\n", numCalcs);
+    
+    pipeArea = PI * D * D / 4.0;
+    vDown = Qturbine / pipeArea;
+    vDownSq = vDown * vDown;
+    vUp = Qpump / pipeArea;
+    vUpSq = vUp * vUp;
+    effElev = H + (depth / 2.0);
+    
+    m = (Eout + Eout * ((1.0 / etaT) - 1.0)) / 
+        (g * effElev - (vDownSq / 2.0) * (k1 + k2 + k3 + (f * L / D)));
+    
+    Ein = (1.0 / etaP) * m * (g * effElev + (vUpSq / 2.0) * 
+          (K1 + K2 + (f * L / D)));
+        
+    timeIn = (m / rho) / Qpump;
+    timeOut = (m / rho) / Qturbine;
+    
+    Ein /= 3600.0 * 1000000.0;
+    timeIn /= 3600;
+    timeOut /= 3600;
+    
+    A = m / (rho * depth);
+    
+    printf("\nCost: %.2lf\n", optimalCost);
+    printf("\nPipe Area: %.2lf m^2\n", pipeArea);
+    printf("Velocity up: %.2lf m/s\n", vUp);
+    printf("Velocity down: %.2lf m/s\n", vDown);
+    printf("Effective elevation: %.2lf m\n", effElev);
+    printf("Energy Out in Joules: %.2le J\n", ((Ein * optimalEtaS) * 3.6e9));
+    printf("Mass stored in reservoir: %.2le kg\n", m);
+    printf("Area of Reservoir: %.2le m^2\n", A);
+    printf("Input Energy: %.2lf MWh\n", Ein);
+    printf("System Efficiency: %.2lf \n", optimalEtaS);
+    printf("Time to Fill: %.2lf hrs\n", timeIn); // must be less than 12 hours
+    printf("Time to Empty: %.2lf hrs\n", timeOut);
+    
+    printf("\nCombinations checked: %d\n", numCalcs);
     
     return 0;
 }
 
 double efficiency(double etaP, double etaT, double D, double L, double f, 
                   double depth, double H, double Qpump, double Qturbine, 
-                  double K1, double K2, double K3, double MAX_AREA, double* SA){
-
+                  double K1, double K2, double K3, double MAX_AREA, double* SA)
+    {
     const double E_OUT = 120 * 3600 * 1e6; //Joules energy out
     const double G = 9.81; //m/s^2  gravity
     const int RHO =  1000; //kg/m^3  density of water
